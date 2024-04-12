@@ -1,0 +1,328 @@
+DROP DATABASE IF EXISTS PemiDB;
+CREATE DATABASE PemiDB;
+USE PemiDB;
+
+CREATE TABLE tb_usuarios(
+    id_usuario INT PRIMARY KEY,
+    imagen_usuario varchar(200),
+    nombre VARCHAR(200) NOT NULL,
+    apellido VARCHAR(200) NOT NULL,
+    numero_telefono VARCHAR(60) NOT NULL,
+    correo_electronico VARCHAR(200) UNIQUE NOT NULL,
+    contraseña VARCHAR(200) NOT NULL,
+    id_notificacion INT
+);
+
+CREATE TABLE tb_almacenamientos(
+    id_almacenamiento INT PRIMARY KEY,
+    nombre_almacenamiento VARCHAR(200),
+    tiempo_estadia TIME 
+);
+
+CREATE TABLE tb_clientes(
+    id_cliente INT PRIMARY KEY,
+    nombre_cliente VARCHAR(200) NOT NULL,
+    apellido_cliente VARCHAR(200) NOT NULL, 
+    correo_electronico_cliente VARCHAR(200) UNIQUE NOT NULL,
+    direccion_cliente VARCHAR(200) NOT NULL,
+    nombre_empresa VARCHAR(150) NOT NULL,
+    numero_telefono_cliente VARCHAR(200) NOT NULL,
+    fax_cliente VARCHAR(200) NOT NULL,
+    fecha_registro_cliente DATE NOT NULL,
+    sufijo_cliente VARCHAR(150) NOT NULL
+);
+
+CREATE TABLE tb_productos(
+    id_producto INT PRIMARY KEY,
+    nombre_producto VARCHAR(200) NOT NULL,
+    descripción_producto VARCHAR(200) NOT NULL,
+    impuesto_producto DECIMAL(24,6) NOT NULL,
+    producto_agotado INT NOT NULL,
+    producto_reserva INT NOT NULL,
+    imagen_producto VARCHAR(200),
+    precio_producto DECIMAL(36,26) NOT NULL,
+    costo_producción_producto DECIMAL(36,26),
+    codigo_producto INT NOT NULL,
+    id_categoria INT NOT NULL  
+);
+
+CREATE TABLE tb_categorias(
+    id_categoria INT PRIMARY KEY,
+    nombre VARCHAR(200)  
+);
+
+CREATE TABLE tb_facturas (
+    id_factura INT PRIMARY KEY,
+    mensaje_garantia VARCHAR(200),
+    impuesto_envio DECIMAL(36,26),
+    correo_cliente VARCHAR(200) UNIQUE,
+    rango_impuesto DECIMAL(36,26),
+    fecha_estimada DATE,
+    subtotal DECIMAL(36,26),
+    numero_seguimiento_orden INT(100),
+    costo_envio DECIMAL(36,26),
+    estado VARCHAR(50) CHECK (estado IN ('activo', 'inactivo', 'pendiente')),
+    fecha_expiracion DATE,
+    id_cliente INT NOT NULL,
+    id_destino int not null
+);
+
+CREATE TABLE tb_destino_productos(
+id_destino INT PRIMARY KEY not null,
+empresas varchar(200)
+
+);
+
+CREATE TABLE tb_detalle_facturas(
+    id_detalle_factura INT PRIMARY KEY,
+    cantidad INT NOT NULL,
+    total INT,
+    id_factura INT NOT NULL,
+    id_detalle_cotizacion INT NOT NULL
+);
+
+CREATE TABLE tb_detalle_cotizaciones(
+    id_detalle_cotizacion INT PRIMARY KEY,
+    etiqueta_edificacion_factura VARCHAR(200) NOT NULL,
+    fecha_expiracion DATE NOT NULL,
+    total DECIMAL(36,26) NOT NULL,
+    impuestos_envio DECIMAL(36,26) NOT NULL,
+    subtotal DECIMAL(36,26) NOT NULL,
+    imagen_producto VARCHAR(200),  
+    costo_envio DECIMAL(12,6) NOT NULL,
+    mensaje_garantia VARCHAR(200),
+    rango_impuesto VARCHAR(200) NOT NULL,
+    estado VARCHAR(50) CHECK (estado IN ('activo', 'inactivo', 'pendiente')),  
+    numero_seguimiento_orden INT NOT NULL,
+    id_almacenamiento INT NOT NULL,  
+    id_cliente INT NOT NULL, 
+    id_producto INT NOT NULL,  
+    id_usuario INT NOT NULL
+);
+
+CREATE TABLE tb_productos_cotizados(
+    id_producto_cotizado INT PRIMARY KEY,
+    id_producto INT NOT NULL,
+    id_cotizacion INT NOT NULL,
+    codigo_cotizacion INT NOT NULL
+);
+
+CREATE TABLE tb_cotizaciones(
+    id_cotizacion INT PRIMARY KEY,
+    nombre_cotizacion VARCHAR(200),
+    id_detalle_factura INT NOT NULL,
+    id_usuario INT NOT NULL
+);
+
+CREATE TABLE tb_notificaciones(
+	id_notificacion INT PRIMARY KEY,
+	nombre VARCHAR(150),
+	descripcion VARCHAR(200),
+	estado_producto VARCHAR(50),
+	fecha_inicio DATE,
+	fecha_final DATE,
+	id_facturas INT
+);
+
+-- Agregar la restricción de clave foránea a tb_detalle_cotizaciones
+ALTER TABLE tb_detalle_cotizaciones
+ADD CONSTRAINT fk_dc_almacenamiento FOREIGN KEY (id_almacenamiento) REFERENCES tb_almacenamientos(id_almacenamiento),
+ADD CONSTRAINT fk_dc_cliente FOREIGN KEY (id_cliente) REFERENCES tb_clientes(id_cliente),
+ADD CONSTRAINT fk_dc_producto FOREIGN KEY (id_producto) REFERENCES tb_productos(id_producto),
+ADD CONSTRAINT fk_dc_usuario FOREIGN KEY (id_usuario) REFERENCES tb_usuarios(id_usuario);
+
+-- Agregar la restricción de clave foránea a tb_producto_cotizado
+ALTER TABLE tb_productos_cotizados
+ADD CONSTRAINT fk_pc_producto FOREIGN KEY (id_producto) REFERENCES tb_productos(id_producto),
+ADD CONSTRAINT fk_pc_cotizacion FOREIGN KEY (id_cotizacion) REFERENCES tb_cotizaciones(id_cotizacion);
+
+-- Agregar la restricción de clave foránea a tb_cotizacion
+ALTER TABLE tb_cotizaciones
+ADD CONSTRAINT fk_cotizacion_detalle_factura FOREIGN KEY (id_detalle_factura) REFERENCES tb_detalle_facturas(id_detalle_factura),
+ADD CONSTRAINT fk_cotizacion_usuario FOREIGN KEY (id_usuario) REFERENCES tb_usuarios(id_usuario);
+
+-- Agregar la restricción de clave foránea a tb_productos
+ALTER TABLE tb_productos
+ADD CONSTRAINT fk_productos_categoria FOREIGN KEY (id_categoria) REFERENCES tb_categorias(id_categoria);
+
+-- Agregar la restricción de clave foránea a tb_productos
+ALTER TABLE tb_facturas
+ADD CONSTRAINT fk_productos_destino FOREIGN KEY (id_destino) REFERENCES tb_destino_productos(id_destino);
+
+
+-- Agregar la restricción de clave foránea a tb_facturas
+ALTER TABLE tb_facturas
+ADD CONSTRAINT fk_facturas_cliente FOREIGN KEY (id_cliente) REFERENCES tb_clientes(id_cliente);
+
+-- Agregar la restricción de clave foránea a tb_detalle_factura
+ALTER TABLE tb_detalle_facturas
+ADD CONSTRAINT fk_detalle_factura_factura FOREIGN KEY (id_factura) REFERENCES tb_facturas(id_factura),
+ADD CONSTRAINT fk_detalle_cotizacion_factura FOREIGN KEY (id_detalle_cotizacion) REFERENCES tb_detalle_cotizaciones(id_detalle_cotizacion);
+
+-- Agregar la restricción de clave foránea a tb_usuario
+ALTER TABLE tb_usuarios
+ADD CONSTRAINT fk_usuario_notificacion FOREIGN KEY (id_notificacion) REFERENCES tb_notificaciones(id_notificacion);
+
+
+
+-- Insertar datos en tb_categorias
+INSERT INTO tb_categorias (id_categoria, nombre) VALUES
+(1, 'Electrónica'),
+(2, 'Ropa'),
+(3, 'Hogar'),
+(4, 'Electrodomésticos'),
+(5, 'Deportes'),
+(6, 'Joyería'),
+(7, 'Libros'),
+(8, 'Música'),
+(9, 'Juegos'),
+(10, 'Salud y Belleza');
+
+
+-- Insertar datos en tb_almacenamientos
+INSERT INTO tb_almacenamientos (id_almacenamiento, nombre_almacenamiento, tiempo_estadia) VALUES
+(1, 'Almacenamiento 1', '08:00:00'),
+(2, 'Almacenamiento 2', '12:00:00'),
+(3, 'Almacenamiento 3', '24:00:00'),
+(4, 'Almacenamiento 4', '08:00:00'),
+(5, 'Almacenamiento 5', '12:00:00'),
+(6, 'Almacenamiento 6', '24:00:00'),
+(7, 'Almacenamiento 7', '16:00:00'),
+(8, 'Almacenamiento 8', '20:00:00'),
+(9, 'Almacenamiento 9', '18:00:00'),
+(10, 'Almacenamiento 10', '10:00:00');
+
+-- Insertar datos en tb_destino_productos
+INSERT INTO tb_destino_productos (id_destino, empresas) VALUES
+(1, 'Empresa A'),
+(2, 'Empresa B'),
+(3, 'Empresa C'),
+(4, 'Empresa D'),
+(5, 'Empresa E'),
+(6, 'Empresa F'),
+(7, 'Empresa G'),
+(8, 'Empresa H'),
+(9, 'Empresa I'),
+(10, 'Empresa J');
+
+
+INSERT INTO tb_notificaciones (id_notificacion, nombre, descripcion, estado_producto, fecha_inicio, fecha_final, id_facturas) VALUES
+(1, 'Notificación 1', 'Descripción de la notificación 1', 'activo', '2024-04-01', '2024-04-30', 1),
+(2, 'Notificación 2', 'Descripción de la notificación 2', 'inactivo', '2024-04-02', '2024-04-29', 2),
+(3, 'Notificación 3', 'Descripción de la notificación 3', 'pendiente', '2024-04-03', '2024-04-28', 3),
+(4, 'Notificación 4', 'Descripción de la notificación 4', 'activo', '2024-04-04', '2024-04-27', 4),
+(5, 'Notificación 5', 'Descripción de la notificación 5', 'inactivo', '2024-04-05', '2024-04-26', 5),
+(6, 'Notificación 6', 'Descripción de la notificación 6', 'pendiente', '2024-04-06', '2024-04-25', 6),
+(7, 'Notificación 7', 'Descripción de la notificación 7', 'activo', '2024-04-07', '2024-04-24', 7),
+(8, 'Notificación 8', 'Descripción de la notificación 8', 'inactivo', '2024-04-08', '2024-04-23', 8),
+(9, 'Notificación 9', 'Descripción de la notificación 9', 'pendiente', '2024-04-09', '2024-04-22', 9),
+(10, 'Notificación 10', 'Descripción de la notificación 10', 'activo', '2024-04-10', '2024-04-21', 10);
+
+ 
+-- Insertar datos en tb_clientes
+INSERT INTO tb_clientes (id_cliente, nombre_cliente, apellido_cliente, correo_electronico_cliente, direccion_cliente, nombre_empresa, numero_telefono_cliente, fax_cliente, fecha_registro_cliente, sufijo_cliente) VALUES
+(1, 'Carlos', 'López', 'carlos@example.com', 'Calle Principal 123', 'Empresa A', '987654321', '123456789', '2023-05-15', 'Cliente A'),
+(2, 'Laura', 'García', 'laura@example.com', 'Avenida Central 456', 'Empresa B', '789654123', '987123654', '2022-11-20', 'Cliente B'),
+(3, 'Roberto', 'Fernández', 'roberto@example.com', 'Carrera 7 # 89-10', 'Empresa C', '123789456', '456987321', '2024-01-30', 'Cliente C'),
+(4, 'Ana', 'María', 'ana@example.com', 'Calle 123', 'Empresa D', '987654321', '123456789', '2023-06-15', 'Cliente D'),
+(5, 'David', 'Alejandro', 'david@example.com', 'Avenida 456', 'Empresa E', '789654123', '987123654', '2022-12-20', 'Cliente E'),
+(6, 'Sara', 'Isabel', 'sara@example.com', 'Carrera 789', 'Empresa F', '123789456', '456987321', '2024-02-28', 'Cliente F'),
+(7, 'Jorge', 'Alberto', 'jorge@example.com', 'Calle 321', 'Empresa G', '456123789', '789456123', '2023-07-25', 'Cliente G'),
+(8, 'Lucía', 'Fernanda', 'lucia@example.com', 'Avenida 654', 'Empresa H', '321987654', '654123789', '2022-11-30', 'Cliente H'),
+(9, 'Fernando', 'José', 'fernando@example.com', 'Carrera 987', 'Empresa I', '789321654', '987654321', '2024-03-10', 'Cliente I'),
+(10, 'Marta', 'Luisa','marta@example.com', 'Calle 987', 'Empresa J', '654987321', '321654987', '2023-08-05', 'Cliente J');
+
+-- Insertar datos en tb_productos
+INSERT INTO tb_productos (id_producto, nombre_producto, descripción_producto, impuesto_producto, producto_agotado, producto_reserva, imagen_producto, precio_producto, costo_producción_producto, codigo_producto, id_categoria) VALUES
+(1, 'Producto 1', 'Descripción del producto 1', 0.0, 0, 10, 'imagen1.jpg', 100.50, 50.25, 12345, 1),
+(2, 'Producto 2', 'Descripción del producto 2', 0.0, 0, 5, 'imagen2.jpg', 75.25, 40.75, 67890, 2),
+(3, 'Producto 3', 'Descripción del producto 3', 1.5, 1, 0, 'imagen3.jpg', 150.75, 80.50, 24680, 1),
+(4, 'Producto 4', 'Descripción del producto 4', 1.0, 1, 0, 'imagen4.jpg', 200.25, 100.50, 54321, 4),
+(5, 'Producto 5', 'Descripción del producto 5', 2.0, 0, 3, 'imagen5.jpg', 150.75, 75.25, 98765, 5),
+(6, 'Producto 6', 'Descripción del producto 6', 0.5, 0, 8, 'imagen6.jpg', 175.50, 90.25, 67890, 6),
+(7, 'Producto 7', 'Descripción del producto 7', 1.5, 1, 0, 'imagen7.jpg', 300.75, 150.50, 24680, 7),
+(8, 'Producto 8', 'Descripción del producto 8', 0.0, 0, 12, 'imagen8.jpg', 125.25, 60.75, 13579, 8),
+(9, 'Producto 9', 'Descripción del producto 9', 1.0, 1, 5, 'imagen9.jpg', 180.25, 85.50, 24681, 9),
+(10, 'Producto 10', 'Descripción del producto 10', 0.0, 0, 7, 'imagen10.jpg', 145.75, 70.25, 97531, 10);
+
+
+-- Insertar datos en tb_usuarios
+INSERT INTO tb_usuarios (id_usuario, imagen_usuario, nombre, apellido, numero_telefono, correo_electronico, contraseña, id_notificacion) VALUES
+(1, 'imagen1.png', 'Juan', 'Perez', '123456789', 'juan@example.com', 'contraseña123', 1),
+(2, 'imagen2.png', 'María', 'Gomez', '987654321', 'maria@example.com', 'password456', 2),
+(3, 'imagen3.png', 'Pedro', 'Martínez', '456789123', 'pedro@example.com', 'clave789', 3),
+(4, 'imagen4.png', 'Andrés', 'Sánchez', '123789456', 'andres@example.com', 'clave123', 4),
+(5, 'imagen5.png', 'Mónica', 'Torres', '789123456', 'monica@example.com', 'password123', 5),
+(6, 'imagen6.png', 'Carlos', 'Gómez', '456789123', 'carlos@example.com', 'contraseña456', 6),
+(7, 'imagen7.png', 'Luisa', 'Díaz', '987654321', 'luisa@example.com', 'password789', 7),
+(8, 'imagen8.png', 'Marcela', 'Alvarez', '654987321', 'marcela@example.com', 'clave789', 8),
+(9, 'imagen9.png', 'Pablo', 'Rojas', '321654987', 'pablo@example.com', 'contraseña987', 9),
+(10, 'imagen10.png', 'Lucas', 'Martínez', '987321654', 'lucas@example.com', 'password987', 10);
+
+-- Insertar datos en tb_detalle_cotizaciones
+INSERT INTO tb_detalle_cotizaciones (id_detalle_cotizacion, etiqueta_edificacion_factura, fecha_expiracion, total, impuestos_envio, subtotal, imagen_producto, costo_envio, mensaje_garantia, rango_impuesto, estado, numero_seguimiento_orden, id_almacenamiento, id_cliente, id_producto, id_usuario) VALUES
+(1, 'Etiqueta 1', '2024-04-12', 100.50, 5.25, 105.75, 'imagen1.jpg', 10.25, 'Garantía de 1 año', 0.05, 'pendiente', 123456789, 1, 1, 1, 1),
+(2, 'Etiqueta 2', '2024-04-15', 75.25, 3.75, 79.00, 'imagen2.jpg', 8.50, 'Garantía de 6 meses', 0.03, 'activo', 987654321, 2, 2, 2, 2),
+(3, 'Etiqueta 3', '2024-04-18', 150.75, 7.50, 158.25, 'imagen3.jpg', 12.75, 'Garantía de 2 años', 0.08, 'pendiente', 654321987, 3, 3, 3, 3),
+(4, 'Etiqueta 4', '2024-04-14', 200.75, 10.25, 211.00, 'imagen4.jpg', 15.50, 'Garantía de 3 años', 0.08, 'pendiente', 987654321, 4, 4, 4, 4),
+(5, 'Etiqueta 5', '2024-04-17', 175.25, 7.75, 183.00, 'imagen5.jpg', 12.25, 'Garantía de 1 año', 0.05, 'activo', 654321987, 5, 5, 5, 5),
+(6, 'Etiqueta 6', '2024-04-20', 225.50, 12.50, 238.00, 'imagen6.jpg', 18.75, 'Garantía de 6 meses', 0.03, 'pendiente', 321987654, 6, 6, 6, 6),
+(7, 'Etiqueta 7', '2024-04-23', 300.75, 15.25, 316.00, 'imagen7.jpg', 20.50, 'Garantía de 2 años', 0.06, 'activo', 987321654, 7, 7, 7, 7),
+(8, 'Etiqueta 8', '2024-04-26', 125.25, 6.75, 132.00, 'imagen8.jpg', 8.25, 'Garantía de 1 año', 0.04, 'pendiente', 654987321, 8, 8, 8, 8),
+(9, 'Etiqueta 9', '2024-04-29', 180.50, 10.50, 191.00, 'imagen9.jpg', 14.25, 'Garantía de 2 años', 0.07, 'activo', 321654987, 9, 9, 9, 9),
+(10, 'Etiqueta 10', '2024-05-02', 150.75, 8.25, 159.00, 'imagen10.jpg', 10.50, 'Garantía de 6 meses', 0.02, 'pendiente', 987123456, 10, 10, 10, 10);
+
+
+-- Insertar datos en tb_facturas
+INSERT INTO tb_facturas (id_factura, mensaje_garantia, impuesto_envio, correo_cliente, rango_impuesto, fecha_estimada, subtotal, numero_seguimiento_orden, costo_envio, estado, fecha_expiracion, id_cliente, id_destino) VALUES
+(1, 'Garantía de 1 año', 5.25, 'cliente1@example.com', 0.05, '2024-04-12', 100.50, 123456789, 10.25, 'pendiente', '2024-05-12', 1, 1),
+(2, 'Garantía de 6 meses', 3.75, 'cliente2@example.com', 0.03, '2024-04-15', 75.25, 987654321, 8.50, 'activo', '2024-05-15', 2, 2),
+(3, 'Garantía de 2 años', 7.50, 'cliente3@example.com', 0.08, '2024-04-18', 150.75, 654321987, 12.75, 'pendiente', '2024-05-18', 3, 3),
+(4, 'Garantía de 3 años', 10.50, 'cliente4@example.com', 0.06, '2024-04-20', 200.75, 987654321, 15.50, 'pendiente', '2024-05-20', 4, 4),
+(5, 'Garantía de 1 año', 8.25, 'cliente5@example.com', 0.04, '2024-04-23', 175.25, 654321987, 12.25, 'activo', '2024-05-23', 5, 5),
+(6, 'Garantía de 6 meses', 12.75, 'cliente6@example.com', 0.07, '2024-04-26', 225.50, 321987654, 18.75, 'pendiente', '2024-05-26', 6, 6),
+(7, 'Garantía de 2 años', 15.25, 'cliente7@example.com', 0.08, '2024-04-29', 300.75, 987321654, 20.50, 'activo', '2024-05-29', 7, 7),
+(8, 'Garantía de 1 año', 6.75, 'cliente8@example.com', 0.03, '2024-05-02', 125.25, 654987321, 8.25, 'pendiente', '2024-06-02', 8, 8),
+(9, 'Garantía de 2 años', 10.50, 'cliente9@example.com', 0.05, '2024-05-05', 180.50, 321654987, 14.25, 'activo', '2024-06-05', 9, 9),
+(10, 'Garantía de 6 meses', 8.25, 'cliente10@example.com', 0.02, '2024-05-08', 150.75, 987123456, 10.50, 'pendiente', '2024-06-08', 10, 10);
+
+
+-- Insertar datos en tb_detalle_facturas
+INSERT INTO tb_detalle_facturas (id_detalle_factura, cantidad, total, id_factura, id_detalle_cotizacion) VALUES
+(1, 2, 150, 1, 1),
+(2, 3, 225, 2, 2),
+(3, 1, 200, 3, 3),
+(4, 3, 250, 4, 4),
+(5, 2, 350, 5, 5),
+(6, 1, 400, 6, 6),
+(7, 4, 550, 7, 7),
+(8, 3, 200, 8, 8),
+(9, 2, 300, 9, 9),
+(10, 3, 250, 10, 10);
+
+-- Insertar datos en tb_cotizaciones
+INSERT INTO tb_cotizaciones (id_cotizacion,nombre_cotizacion,id_detalle_factura, id_usuario) VALUES
+(1,'Cotización 1', 1, 1),
+(2, 'Cotización 2',2, 2),
+(3, 'Cotización 3',3, 3),
+(4, 'Cotización 4', 4, 4),
+(5, 'Cotización 5', 5, 5),
+(6, 'Cotización 6', 6, 6),
+(7, 'Cotización 7', 7, 7),
+(8, 'Cotización 8', 8, 8),
+(9, 'Cotización 9', 9, 9),
+(10, 'Cotización 10', 10, 10);
+
+-- Insertar datos en tb_productos_cotizados
+INSERT INTO tb_productos_cotizados (id_producto_cotizado, id_producto, id_cotizacion, codigo_cotizacion) VALUES
+(1, 1, 1, 12345),
+(2, 2, 2, 67890),
+(3, 3, 3, 24680),
+(4, 4, 4, 54321),
+(5, 5, 5, 98765),
+(6, 6, 6, 67890),
+(7, 7, 7, 24680),
+(8, 8, 8, 13579),
+(9, 9, 9, 24681),
+(10, 10, 10, 97531);
+
